@@ -2,10 +2,8 @@
 import os
 import sys
 import csv
-
+import math
 from PIL import Image, ImageDraw
-
-import dgeo
 
 # file format info
 LATITUDE_COLUMN = 72
@@ -18,6 +16,52 @@ race_codes = { 'SE_T054_001' : 'Total population',
           'SE_T054_006' : 'Total population: Native Hawaiian and Other Pacific Islander alone',
           'SE_T054_007' : 'Total population: Some Other Race alone',
           'SE_T054_008' : 'Total population: Two or More Races' }
+
+
+def distance_on_spherical_earth(lat1, long1, lat2, long2):
+
+    # Convert latitude and longitude to 
+    # spherical coordinates in radians.
+    degrees_to_radians = math.pi/180.0
+        
+    # phi = 90 - latitude
+    phi1 = (90.0 - lat1)*degrees_to_radians
+    phi2 = (90.0 - lat2)*degrees_to_radians
+        
+    # theta = longitude
+    theta1 = long1*degrees_to_radians
+    theta2 = long2*degrees_to_radians
+        
+    # Compute spherical distance from spherical coordinates.
+        
+    # For two locations in spherical coordinates 
+    # (1, theta, phi) and (1, theta, phi)
+    # cosine( arc length ) = 
+    #    sin phi sin phi' cos(theta-theta') + cos phi cos phi'
+    # distance = rho * arc length
+    
+    cos = (math.sin(phi1)*math.sin(phi2)*math.cos(theta1 - theta2) + 
+           math.cos(phi1)*math.cos(phi2))
+    arc = math.acos( cos )
+
+    # Remember to multiply arc by the radius of the earth 
+    # in your favorite set of units to get length.
+    return arc * 6378100
+
+# some maps (of the earth) use mercator projection, this is an "Okay Projection" that I made up.
+# maybe it corresponds to some real accepted projection.
+def ok_projection_aspect(left, right, top, bottom):
+   degree_width  = (right - left)
+   degree_height = (top - bottom)
+
+   center_x = left + (right - left) / 2.0
+   center_y = bottom + (top - bottom) / 2.0
+
+   meter_width  = distance_on_spherical_earth(center_y, left, center_y, right)
+   meter_height = distance_on_spherical_earth(bottom, center_x, top, center_x)
+
+   return meter_width / meter_height
+
 
 class GeoRaceData:
    races = {}
@@ -81,7 +125,7 @@ class GeoRaceData:
                (latlng[0] - self.min_lat) / self.degree_height() )
    
    def get_image(self, width=512):
-      aspect = dgeo.ok_projection_aspect(self.min_lng, self.max_lng, self.max_lat, self.min_lat)
+      aspect = ok_projection_aspect(self.min_lng, self.max_lng, self.max_lat, self.min_lat)
       height = int(float(width) / aspect)
       image = Image.new('RGBA', (width, height))
       draw = ImageDraw.Draw(image)
