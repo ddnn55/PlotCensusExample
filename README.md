@@ -7,4 +7,5 @@ Parses .CSV census data as delivered by socialexplorer.com from http://www.socia
 (Make sure to check "Output ALL geographic identifiers" checkbox)
 
 Example Output:
+
 ![Illinois pseudo-population plot](http://farm8.staticflickr.com/7179/6986350897_c997283421_z.jpg)
